@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product List</title>
+    <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .product-image {
+            max-width: 100px;
+            max-height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <h2>Product List</h2>
+    <form id="productForm">
+        <label for="productId">Enter Product ID:</label>
+        <input type="number" id="productId" required>
+        <button type="submit">Add Product</button>
+    </form>
+    <table id="productTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="productBody">
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchProductById(productId) {
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+                const product = data.products.find(item => item.id === productId);
+                return product;
+            } catch (error) {
+                console.error('Error fetching product:', error);
+            }
+        }
+
+       
+        async function addProductRow(productId) {
+            const product = await fetchProductById(productId);
+            if (product) {
+                const tableBody = document.getElementById('productBody');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td>${product.title}</td>
+                    <td>${product.description}</td>
+                    <td>$${product.price}</td>
+                    <td><img src="${product.thumbnail}" alt="${product.title}" class="product-image"></td>
+                    <td>
+                        <button onclick="deleteProduct(${product.id})">Delete</button>
+                        <button onclick="editProduct(${product.id})">Edit</button>
+                    </td>
+                `;
+                row.dataset.id = product.id; 
+                tableBody.appendChild(row);
+            } else {
+                alert('Product not found!');
+            }
+        }
+
+       
+        async function onFormSubmit(event) {
+            event.preventDefault(); // Prevent form submission
+            const productIdInput = document.getElementById('productId');
+            const productId = parseInt(productIdInput.value); // Get entered product ID
+
+            await addProductRow(productId); // Add product row to the table
+            productIdInput.value = ''; // Clear input field
+        }
+
+      
+        function deleteProduct(productId) {
+            const productRow = document.querySelector(`#productBody tr[data-id="${productId}"]`);
+            if (productRow) {
+                productRow.remove();
+            }
+        }
+
+       
+        async function editProduct(productId) {
+            const product = await fetchProductById(productId);
+            if (product) {
+                const row = document.querySelector(`#productBody tr[data-id="${productId}"]`);
+                row.innerHTML = `
+                    <td>${product.id}</td>
+                    <td><input type="text" value="${product.title}"></td>
+                    <td><input type="text" value="${product.description}"></td>
+                    <td><input type="text" value="${product.price}"></td>
+                    <td><img src="${product.thumbnail}" alt="${product.title}" class="product-image"></td>
+                    <td>
+                        <button onclick="updateProduct(${product.id})">Save</button>
+                    </td>
+                `;
+            } else {
+                alert('Product not found!');
+            }
+        }
+
+        // Function to update product
+        async function updateProduct(productId) {
+            const row = document.querySelector(`#productBody tr[data-id="${productId}"]`);
+            const inputs = row.querySelectorAll('input');
+            const updatedProduct = {
+                id: productId,
+                title: inputs[0].value,
+                description: inputs[1].value,
+                // price: inputs[2].value,
+                thumbnail: row.querySelector('img').src
+            };
+            // Perform the update logic here, for example, via AJAX or fetch
+            console.log('Updated product:', updatedProduct);
+            // You can also re-render the row with the updated data if necessary
+        }
+
+        // Event listener for form submission
+        const productForm = document.getElementById('productForm');
+        productForm.addEventListener('submit', onFormSubmit);
+    </script>
+</body>
+</html>
+
